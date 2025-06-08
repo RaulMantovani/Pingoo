@@ -5,87 +5,93 @@
     android:padding="16dp">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/tvMateriaDetalhe"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Matéria"
-            android:textStyle="bold"
-            android:textSize="24sp" />
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvProfessorDetalhe"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Professor"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:text="Professor" />
 
         <TextView
             android:id="@+id/tvDiaSemanaDetalhe"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Dia da Semana"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:text="Dia da Semana" />
 
         <TextView
             android:id="@+id/tvNotas"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Notas:"
             android:layout_marginTop="16dp"
+            android:text="Notas:"
             android:textStyle="bold" />
 
         <ListView
             android:id="@+id/listaNotas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:dividerHeight="8dp"/>
+            android:dividerHeight="8dp" />
 
         <TextView
             android:id="@+id/tvListaNotas"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sem notas"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:text="Sem notas" />
 
         <TextView
             android:id="@+id/tvAnotacoes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Anotações:"
             android:layout_marginTop="16dp"
+            android:text="Anotações:"
             android:textStyle="bold" />
 
         <ListView
             android:id="@+id/listaAnotacoes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:dividerHeight="8dp"/>
+            android:dividerHeight="8dp" />
 
         <TextView
             android:id="@+id/tvListaAnotacoes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sem anotações"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:text="Sem anotações" />
 
         <Button
             android:id="@+id/btnAdicionarNota"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Adicionar Nota"
-            android:layout_marginTop="24dp" />
+            android:layout_marginTop="24dp"
+            android:text="Adicionar Nota" />
 
         <Button
             android:id="@+id/btnAdicionarAnotacao"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Adicionar Anotação"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:text="Adicionar Anotação" />
+
+        <Button
+            android:id="@+id/btnExcluirAula"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Excluir Aula" />
 
     </LinearLayout>
 </ScrollView>

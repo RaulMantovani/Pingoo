@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
@@ -32,7 +33,7 @@ public class DetalhesAulaActivity extends AppCompatActivity {
     private TextView tvMateria, tvProfessor, tvDiaSemana, tvSemNotas, tvSemAnotacoes;
     private Aula aula;
     private ListView listaNotas, listaAnotacoes;
-    private Button btnAdicionarNota, btnAdicionarAnotacao;
+    private Button btnAdicionarNota, btnAdicionarAnotacao, btnExcluirAula;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +50,7 @@ public class DetalhesAulaActivity extends AppCompatActivity {
         listaAnotacoes = findViewById(R.id.listaAnotacoes);
         btnAdicionarNota = findViewById(R.id.btnAdicionarNota);
         btnAdicionarAnotacao = findViewById(R.id.btnAdicionarAnotacao);
+        btnExcluirAula = findViewById(R.id.btnExcluirAula);
 
         int aulaId = getIntent().getIntExtra("AULA_ID", -1);
         if (aulaId != -1) {
@@ -159,6 +161,25 @@ public class DetalhesAulaActivity extends AppCompatActivity {
                     .show();
         });
 
+        //Exclui a aula
+        btnExcluirAula.setOnClickListener(v -> {
+            String url = "http://192.168.1.254:8080/aulas/" + aula.getId();
+
+            StringRequest request = new StringRequest(
+                    Request.Method.DELETE,
+                    url,
+                    response -> {
+                        Toast.makeText(this, "Aula excluída", Toast.LENGTH_SHORT).show();
+                        finish(); // Volta para a tela anterior (AulasActivity)
+                    },
+                    error -> {
+                        Toast.makeText(this, "Erro ao excluir aula", Toast.LENGTH_SHORT).show();
+                        error.printStackTrace();
+                    }
+            );
+
+            Volley.newRequestQueue(this).add(request);
+        });
         // Edita ou exclui uma nota
         //excluído por agora
 
