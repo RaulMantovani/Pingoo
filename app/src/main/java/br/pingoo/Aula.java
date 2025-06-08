@@ -52,6 +52,7 @@ public class Aula implements Serializable {
         this.notas = notas;
     }
 
-    public void setAnotacoes(List<String> objects) {
+    public void setAnotacoes(List<String> anotacoes) {
+        this.anotacoes = anotacoes;
     }
 }

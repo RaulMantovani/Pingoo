@@ -29,7 +29,7 @@ import java.util.List;
 
 public class DetalhesAulaActivity extends AppCompatActivity {
 
-    private TextView tvMateria, tvProfessor, tvDiaSemana, tvSemNotas;
+    private TextView tvMateria, tvProfessor, tvDiaSemana, tvSemNotas, tvSemAnotacoes;
     private Aula aula;
     private ListView listaNotas, listaAnotacoes;
     private Button btnAdicionarNota, btnAdicionarAnotacao;
@@ -44,6 +44,7 @@ public class DetalhesAulaActivity extends AppCompatActivity {
         tvProfessor = findViewById(R.id.tvProfessorDetalhe);
         tvDiaSemana = findViewById(R.id.tvDiaSemanaDetalhe);
         tvSemNotas = findViewById(R.id.tvListaNotas);
+        tvSemAnotacoes = findViewById(R.id.tvListaAnotacoes);
         listaNotas = findViewById(R.id.listaNotas);
         listaAnotacoes = findViewById(R.id.listaAnotacoes);
         btnAdicionarNota = findViewById(R.id.btnAdicionarNota);
@@ -117,16 +118,42 @@ public class DetalhesAulaActivity extends AppCompatActivity {
         btnAdicionarAnotacao.setOnClickListener(v -> {
             EditText inputAnotacao = new EditText(this);
             inputAnotacao.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+
             new AlertDialog.Builder(this)
                     .setTitle("Adicionar Anotação")
                     .setView(inputAnotacao)
                     .setPositiveButton("Salvar", (dialog, which) -> {
-                        String anotacao = inputAnotacao.getText().toString().trim();
-                        if (!anotacao.isEmpty()) {
-                            aula.adicionarAnotacao(anotacao);
-                            atualizarDados();
-                            Toast.makeText(this, "Anotação adicionada", Toast.LENGTH_SHORT).show();
+                        String texto = inputAnotacao.getText().toString().trim();
+                        if (texto.isEmpty()) {
+                            Toast.makeText(this, "Anotação não pode ser vazia", Toast.LENGTH_SHORT).show();
+                            return;
                         }
+
+                        String url = "http://192.168.1.254:8080/aulas/" + aula.getId() + "/anotacoes";
+
+                        JSONObject jsonBody = new JSONObject();
+                        try {
+                            jsonBody.put("texto", texto);
+                        } catch (JSONException e) {
+                            Toast.makeText(this, "Erro ao criar anotação", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        JsonObjectRequest request = new JsonObjectRequest(
+                                Request.Method.POST,
+                                url,
+                                jsonBody,
+                                response -> {
+                                    Toast.makeText(this, "Anotação adicionada", Toast.LENGTH_SHORT).show();
+                                    buscarAulaDoServidor(aula.getId()); // recarrega os dados
+                                },
+                                error -> {
+                                    Toast.makeText(this, "Erro ao adicionar anotação", Toast.LENGTH_SHORT).show();
+                                    error.printStackTrace();
+                                }
+                        );
+
+                        Volley.newRequestQueue(this).add(request);
                     })
                     .setNegativeButton("Cancelar", null)
                     .show();
@@ -205,6 +232,12 @@ public class DetalhesAulaActivity extends AppCompatActivity {
             tvSemNotas.setVisibility(View.VISIBLE);
         } else {
             tvSemNotas.setVisibility(View.GONE);
+        }
+
+        if (aula.getAnotacoes().isEmpty()) {
+            tvSemAnotacoes.setVisibility(View.VISIBLE);
+        } else {
+            tvSemAnotacoes.setVisibility(View.GONE);
         }
     }
 }
