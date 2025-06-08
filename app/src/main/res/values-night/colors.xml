@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cor do texto da nota -->
+    <color name="note_text">#FFFFFF</color> <!-- Texto preto -->
+    <color name="note_selector">#22000000</color> <!-- Seleção leve escura -->
+</resources>

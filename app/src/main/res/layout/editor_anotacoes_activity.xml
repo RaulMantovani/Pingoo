@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Campo para editar o nome da nota -->
+    <EditText
+        android:id="@+id/noteNameEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Nome da Nota"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Campo para editar as anotações -->
+    <EditText
+        android:id="@+id/noteContentEditText"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:hint="Digite sua anotação aqui..."
+        android:gravity="top|start"
+        android:inputType="textMultiLine|textCapSentences|textAutoCorrect|textImeMultiLine"/>
+</LinearLayout>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="note_text">#000000</color> <!-- Texto preto -->
+    <color name="note_selector">#22000000</color> <!-- Seleção leve escura -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="light_gray_transparent">#22CCCCCC</color> <!-- Cor semi-transparente -->
+    <color name="Purple">#5B00BF</color>
+</resources>

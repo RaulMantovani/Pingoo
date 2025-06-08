@@ -1,0 +1,309 @@
+package br.pingoo;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.text.InputType;
+import android.app.AlertDialog;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class DetalhesAulaActivity extends AppCompatActivity {
+
+    private TextView tvMateria, tvProfessor, tvDiaSemana, tvSemNotas;
+    private Aula aula;
+    private ListView listaNotas, listaAnotacoes;
+    private Button btnAdicionarNota, btnAdicionarAnotacao;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_detalhes_aula);
+
+
+        tvMateria = findViewById(R.id.tvMateriaDetalhe);
+        tvProfessor = findViewById(R.id.tvProfessorDetalhe);
+        tvDiaSemana = findViewById(R.id.tvDiaSemanaDetalhe);
+        tvSemNotas = findViewById(R.id.tvListaNotas);
+        listaNotas = findViewById(R.id.listaNotas);
+        listaAnotacoes = findViewById(R.id.listaAnotacoes);
+        btnAdicionarNota = findViewById(R.id.btnAdicionarNota);
+        btnAdicionarAnotacao = findViewById(R.id.btnAdicionarAnotacao);
+
+        int aulaId = getIntent().getIntExtra("AULA_ID", -1);
+        if (aulaId != -1) {
+            buscarAulaDoServidor(aulaId);
+        } else {
+            Toast.makeText(this, "ID da aula inválido", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
+        // Adiciona uma nova nota com descrição
+        btnAdicionarNota.setOnClickListener(v -> {
+            View view = getLayoutInflater().inflate(R.layout.dialog_nota, null);
+            EditText inputNota = view.findViewById(R.id.inputNota);
+            EditText inputDescricao = view.findViewById(R.id.inputDescricao);
+
+            inputNota.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Adicionar Nota")
+                    .setView(view)
+                    .setPositiveButton("Salvar", (dialog, which) -> {
+                        try {
+                            float valorNota = Float.parseFloat(inputNota.getText().toString());
+                            String descricao = inputDescricao.getText().toString().trim();
+
+                            if (descricao.isEmpty()) {
+                                Toast.makeText(this, "Descrição não pode ser vazia", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
+                            // Requisição POST via Volley
+                            String url = "http://192.168.1.254:8080/aulas/" + aula.getId() + "/notas";
+
+                            JSONObject jsonBody = new JSONObject();
+                            jsonBody.put("valor", valorNota);
+                            jsonBody.put("descricao", descricao);
+
+                            JsonObjectRequest request = new JsonObjectRequest(
+                                    Request.Method.POST,
+                                    url,
+                                    jsonBody,
+                                    response -> {
+                                        // Atualizar dados da tela após salvar no backend
+                                        Toast.makeText(this, "Nota adicionada", Toast.LENGTH_SHORT).show();
+                                        buscarAulaDoServidor(aula.getId()); // método que recarrega aula do backend
+                                    },
+                                    error -> {
+                                        Toast.makeText(this, "Erro ao adicionar nota", Toast.LENGTH_SHORT).show();
+                                        error.printStackTrace();
+                                    }
+                            );
+
+                            // Adiciona a requisição na fila
+                            Volley.newRequestQueue(this).add(request);
+
+                        } catch (NumberFormatException | JSONException e) {
+                            Toast.makeText(this, "Valor inválido", Toast.LENGTH_SHORT).show();
+                            e.printStackTrace();
+                        }
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+        });
+
+
+        // Adiciona uma anotação
+        btnAdicionarAnotacao.setOnClickListener(v -> {
+            EditText inputAnotacao = new EditText(this);
+            inputAnotacao.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            new AlertDialog.Builder(this)
+                    .setTitle("Adicionar Anotação")
+                    .setView(inputAnotacao)
+                    .setPositiveButton("Salvar", (dialog, which) -> {
+                        String anotacao = inputAnotacao.getText().toString().trim();
+                        if (!anotacao.isEmpty()) {
+                            aula.adicionarAnotacao(anotacao);
+                            atualizarDados();
+                            Toast.makeText(this, "Anotação adicionada", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+        });
+
+        // Edita ou exclui uma nota
+        listaNotas.setOnItemClickListener((parent, view, position, id) -> {
+            Nota nota = aula.getNotas().get(position);
+            View notaView = getLayoutInflater().inflate(R.layout.dialog_nota, null);
+            EditText inputNota = notaView.findViewById(R.id.inputNota);
+            EditText inputDescricao = notaView.findViewById(R.id.inputDescricao);
+
+            inputNota.setText(String.valueOf(nota.getValor()));
+            inputDescricao.setText(nota.getDescricao());
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Editar Nota")
+                    .setView(notaView)
+                    .setPositiveButton("Salvar", (dialog, which) -> {
+                        try {
+                            float novaNota = Float.parseFloat(inputNota.getText().toString());
+                            String descricao = inputDescricao.getText().toString().trim();
+
+                            if (descricao.isEmpty()) {
+                                Toast.makeText(this, "Descrição não pode ser vazia", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
+                            // Monta o JSON para enviar
+                            JSONObject jsonBody = new JSONObject();
+                            jsonBody.put("valor", novaNota);
+                            jsonBody.put("descricao", descricao);
+
+                            String url = "http://192.168.1.254:8080/aulas/" + aula.getId() + "/notas/" + position;
+                            // ATENÇÃO: ajuste o endpoint conforme sua API para atualizar nota por id (ou pelo índice se assim for)
+
+                            JsonObjectRequest putRequest = new JsonObjectRequest(
+                                    Request.Method.PUT,
+                                    url,
+                                    jsonBody,
+                                    response -> {
+                                        Toast.makeText(this, "Nota atualizada", Toast.LENGTH_SHORT).show();
+                                        // Recarregar a aula do servidor para atualizar a lista
+                                        buscarAulaDoServidor(aula.getId());
+                                    },
+                                    error -> {
+                                        Toast.makeText(this, "Erro ao atualizar nota", Toast.LENGTH_SHORT).show();
+                                        error.printStackTrace();
+                                    }
+                            );
+
+                            Volley.newRequestQueue(this).add(putRequest);
+
+                        } catch (NumberFormatException | JSONException e) {
+                            Toast.makeText(this, "Valor inválido", Toast.LENGTH_SHORT).show();
+                            e.printStackTrace();
+                        }
+                    })
+                    .setNeutralButton("Excluir", (dialog, which) -> {
+                        String url = "http://192.168.1.254:8080/aulas/" + aula.getId() + "/notas/" + position;
+                        // ATENÇÃO: ajuste conforme sua API para deletar nota por id
+
+                        JsonObjectRequest deleteRequest = new JsonObjectRequest(
+                                Request.Method.DELETE,
+                                url,
+                                null,
+                                response -> {
+                                    Toast.makeText(this, "Nota excluída", Toast.LENGTH_SHORT).show();
+                                    buscarAulaDoServidor(aula.getId());
+                                },
+                                error -> {
+                                    Toast.makeText(this, "Erro ao excluir nota", Toast.LENGTH_SHORT).show();
+                                    error.printStackTrace();
+                                }
+                        );
+
+                        Volley.newRequestQueue(this).add(deleteRequest);
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+        });
+
+        // Edita ou exclui uma anotação
+        listaAnotacoes.setOnItemClickListener((parent, view, position, id) -> {
+            String anotacao = aula.getAnotacoes().get(position);
+            EditText inputAnotacao = new EditText(this);
+            inputAnotacao.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            inputAnotacao.setText(anotacao);
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Editar Anotação")
+                    .setView(inputAnotacao)
+                    .setPositiveButton("Salvar", (dialog, which) -> {
+                        String novaAnotacao = inputAnotacao.getText().toString().trim();
+                        if (!novaAnotacao.isEmpty()) {
+                            aula.getAnotacoes().set(position, novaAnotacao);
+                            atualizarDados();
+                            Toast.makeText(this, "Anotação atualizada", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNeutralButton("Excluir", (dialog, which) -> {
+                        aula.getAnotacoes().remove(position);
+                        atualizarDados();
+                        Toast.makeText(this, "Anotação excluída", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+        });
+    }
+
+    private void buscarAulaDoServidor(int id) {
+        String url = "http://192.168.1.254:8080/aulas/" + id;
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        // Constrói o objeto Aula manualmente com base no JSON retornado
+                        int aulaId = response.getInt("id");
+                        String materia = response.getString("materia");
+                        String professor = response.getString("professor");
+                        String diaSemana = response.getString("diaSemana");
+
+                        aula = new Aula(aulaId, materia, professor, diaSemana);
+
+                        // Inicializa as listas vazias
+                        List<Nota> listaNotas = new ArrayList<>();
+                        JSONArray notasArray = response.getJSONArray("notas");
+                        Log.d("DEBUG", "JSON recebido: " + response.toString());
+                        for (int i = 0; i < notasArray.length(); i++) {
+                            JSONObject notaJson = notasArray.getJSONObject(i);
+                            float valor = (float) notaJson.getDouble("valor");
+                            String descricao = notaJson.getString("descricao");
+                            listaNotas.add(new Nota(valor, descricao));
+                        }
+                        aula.setNotas(listaNotas);
+
+                        List<String> listaAnotacoes = new ArrayList<>();
+                        JSONArray anotacoesArray = response.getJSONArray("anotacoes");
+                        for (int i = 0; i < anotacoesArray.length(); i++) {
+                            String anotacao = anotacoesArray.getString(i);
+                            listaAnotacoes.add(anotacao);
+                        }
+                        aula.setAnotacoes(listaAnotacoes);
+
+                        tvMateria.setText("Matéria: " + aula.getMateria());
+                        tvProfessor.setText("Professor: " + aula.getProfessor());
+                        tvDiaSemana.setText("Dia: " + aula.getDiaSemana());
+
+                        Log.d("DEBUG", "Atualizando dados: " + aula.getNotas().size() + " notas");
+                        atualizarDados();
+                    } catch (JSONException e) {
+                        Toast.makeText(this, "Erro ao interpretar dados", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> Toast.makeText(this, "Erro ao carregar aula", Toast.LENGTH_SHORT).show()
+        );
+
+        queue.add(request);
+    }
+
+
+
+    private void atualizarDados() {
+        if (aula == null) return;
+
+        ArrayAdapter<Nota> adapterNotas = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, aula.getNotas());
+        listaNotas.setAdapter(adapterNotas);
+
+        ArrayAdapter<String> adapterAnotacoes = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, aula.getAnotacoes());
+        listaAnotacoes.setAdapter(adapterAnotacoes);
+
+        if (aula.getNotas().isEmpty()) {
+            tvSemNotas.setVisibility(View.VISIBLE);
+        } else {
+            tvSemNotas.setVisibility(View.GONE);
+        }
+    }
+}
+

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- ListView para mostrar as notas (apenas o nome da nota será exibido) -->
+    <ListView
+        android:id="@+id/listView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:choiceMode="singleChoice"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="0.5dp"
+        android:padding="8dp"
+        android:listSelector="@drawable/list_item_selector" /> <!-- Seletor personalizado -->
+
+
+    <!-- Botões para adicionar e excluir notas -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="16dp">
+
+        <!-- Botão de Excluir Nota -->
+        <Button
+            android:id="@+id/btnDeleteNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Excluir Nota"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Botão de Adicionar Nota -->
+        <Button
+            android:id="@+id/btnAddNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Adicionar Nota" />
+    </LinearLayout>
+</LinearLayout>

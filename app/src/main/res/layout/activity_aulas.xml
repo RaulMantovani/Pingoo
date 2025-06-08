@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewAulas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/btnAdicionarAula"
+        android:padding="16dp" />
+
+    <Button
+        android:id="@+id/btnAdicionarAula"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Adicionar Aula"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp" />
+</RelativeLayout>

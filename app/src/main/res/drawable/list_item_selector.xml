@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_activated="true" android:drawable="@color/note_selector" />
+    <item android:drawable="@android:color/transparent" />
+
+    <!-- Estado selecionado -->
+    <item android:state_activated="true">
+        <color android:color="#331E88E5" /> <!-- azul claro com transparência -->
+        <!--Você pode trocar a cor #331E88E5 por outra cor com alfa (os dois primeiros dígitos). Ex: #33 = ~20% opaco.-->
+    </item>
+
+    <!-- Estado normal -->
+    <item>
+        <color android:color="@android:color/transparent" />
+    </item>
+</selector>
