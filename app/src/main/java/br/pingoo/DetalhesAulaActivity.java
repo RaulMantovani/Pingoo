@@ -82,7 +82,7 @@ public class DetalhesAulaActivity extends AppCompatActivity {
                             }
 
                             // Requisição POST via Volley
-                            String url = "http://192.168.1.254:8080/aulas/" + aula.getId() + "/notas";
+                            String url = IpConfig.API_IP + "/aulas/" + aula.getId() + "/notas";
 
                             JSONObject jsonBody = new JSONObject();
                             jsonBody.put("valor", valorNota);
@@ -131,7 +131,7 @@ public class DetalhesAulaActivity extends AppCompatActivity {
                             return;
                         }
 
-                        String url = "http://192.168.1.254:8080/aulas/" + aula.getId() + "/anotacoes";
+                        String url = IpConfig.API_IP + "/aulas/" + aula.getId() + "/anotacoes";
 
                         JSONObject jsonBody = new JSONObject();
                         try {
@@ -163,7 +163,7 @@ public class DetalhesAulaActivity extends AppCompatActivity {
 
         //Exclui a aula
         btnExcluirAula.setOnClickListener(v -> {
-            String url = "http://192.168.1.254:8080/aulas/" + aula.getId();
+            String url = IpConfig.API_IP + "/aulas/" + aula.getId();
 
             StringRequest request = new StringRequest(
                     Request.Method.DELETE,
@@ -188,7 +188,7 @@ public class DetalhesAulaActivity extends AppCompatActivity {
     }
 
     private void buscarAulaDoServidor(int id) {
-        String url = "http://192.168.1.254:8080/aulas/" + id;
+        String url = IpConfig.API_IP + "/aulas/" + id;
 
         RequestQueue queue = Volley.newRequestQueue(this);
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,

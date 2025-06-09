@@ -16,7 +16,7 @@ public class EditorAnotacoesActivity extends AppCompatActivity {
 
     EditText noteTitleEditText, noteContentEditText;
     int noteId;
-    String baseUrl = "http://192.168.1.254:8080/anotacoes";
+    String baseUrl = IpConfig.API_IP + "/anotacoes";
     RequestQueue requestQueue;
 
     @Override

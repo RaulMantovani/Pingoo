@@ -35,7 +35,7 @@ public class AnotacoesActivity extends AppCompatActivity {
     Button btnAdd, btnDelete;
 
     RequestQueue requestQueue;
-    String baseUrl = "http://192.168.1.254:8080/anotacoes";
+    String baseUrl = IpConfig.API_IP + "/anotacoes";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

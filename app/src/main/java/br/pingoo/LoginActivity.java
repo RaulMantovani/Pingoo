@@ -22,7 +22,7 @@ import org.json.JSONException;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private static final String LOGIN_URL = "http://192.168.1.254:8080/login";
+    private static final String LOGIN_URL = IpConfig.API_IP + "/login";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

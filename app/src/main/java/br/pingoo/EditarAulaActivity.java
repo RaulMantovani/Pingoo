@@ -24,7 +24,7 @@ public class EditarAulaActivity extends AppCompatActivity {
     private Button btnSalvar;
     private Aula aula;
 
-    private static final String url_base = "http://192.168.1.254:8080/aulas/";
+    private static final String url_base = IpConfig.API_IP + "/aulas/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

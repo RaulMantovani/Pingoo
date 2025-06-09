@@ -24,7 +24,7 @@ import java.util.List;
 
 public class AulasActivity extends AppCompatActivity {
 
-    private static final String url = "http://192.168.1.254:8080/aulas";
+    private static final String url = IpConfig.API_IP + "/aulas";
     private RecyclerView recyclerView;
     private AulaAdapter adapter;
     private List<Aula> listaAulas;

@@ -18,7 +18,7 @@ import org.json.JSONException;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private static final String REGISTER_URL = "http://192.168.1.254:8080/registrar";
+    private static final String REGISTER_URL = IpConfig.API_IP + "/registrar";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

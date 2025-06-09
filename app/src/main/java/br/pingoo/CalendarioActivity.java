@@ -3,7 +3,6 @@ package br.pingoo;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.CalendarView;
@@ -18,12 +17,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.time.LocalDate;
 import java.time.DayOfWeek;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.ZoneId;
 
 public class CalendarioActivity extends AppCompatActivity {
 
@@ -50,73 +57,75 @@ public class CalendarioActivity extends AppCompatActivity {
         listaEventos.setLayoutManager(new LinearLayoutManager(this));
         listaEventos.setAdapter(adaptadorEvento);
 
-        carregarEventosSalvos();
-
         calendario.setOnDateChangeListener((view, ano, mes, diaDoMes) -> {
             LocalDate dataSelecionada = LocalDate.of(ano, mes + 1, diaDoMes);
             long dataMillis = dataSelecionada.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-            if (!mostrarEventosSemana) {
-                carregarEventosDoDia(dataMillis);
-            } else {
-                carregarEventosDaSemana(dataMillis);
-            }
+            carregarEventos(mostrarEventosSemana, dataMillis);
         });
 
         botaoAlternarSemana.setOnClickListener(v -> {
             mostrarEventosSemana = !mostrarEventosSemana;
             long dataSelecionada = calendario.getDate();
-            if (mostrarEventosSemana) {
-                botaoAlternarSemana.setText("Ver eventos do dia");
-                carregarEventosDaSemana(dataSelecionada);
-            } else {
-                botaoAlternarSemana.setText("Ver eventos da semana");
-                carregarEventosDoDia(dataSelecionada);
-            }
+            botaoAlternarSemana.setText(mostrarEventosSemana ? "Ver eventos do dia" : "Ver eventos da semana");
+            carregarEventos(mostrarEventosSemana, dataSelecionada);
         });
 
         findViewById(R.id.btAddEvento).setOnClickListener(v -> abrirDialogoAdicionarEvento());
+
+        // Load events for today on start
+        carregarEventos(false, calendario.getDate());
     }
 
-    private void carregarEventosDoDia(long dataMillis) {
+
+    private void carregarEventos(boolean porSemana, long dataMillis) {
         eventos.clear();
 
-        LocalDate data = LocalDate.ofEpochDay(dataMillis / (24 * 60 * 60 * 1000));
-        SharedPreferences prefs = getSharedPreferences("events", MODE_PRIVATE);
-        String chaveData = data.toString();
+        String url = IpConfig.API_IP + "/calendario/listar";
 
-        String eventosSalvos = prefs.getString(chaveData, "");
-        if (!eventosSalvos.isEmpty()) {
-            String[] itens = eventosSalvos.split(";");
-            for (String item : itens) {
-                eventos.add(item + " - " + data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            }
-        }
+        JsonArrayRequest request = new JsonArrayRequest(
+                Request.Method.GET,
+                url,
+                null,
+                response -> {
+                    try {
+                        List<String> eventosFiltrados = new ArrayList<>();
+                        LocalDate dataReferencia = LocalDate.ofEpochDay(dataMillis / (24 * 60 * 60 * 1000));
+                        List<LocalDate> datasParaMostrar = new ArrayList<>();
 
-        adaptadorEvento.notifyDataSetChanged();
-        textoEventos.setText("Eventos do dia " + data.getDayOfMonth() + "/" + data.getMonthValue());
-    }
+                        if (porSemana) {
+                            LocalDate inicio = obterInicioSemana(dataReferencia);
+                            for (int i = 0; i < 7; i++) {
+                                datasParaMostrar.add(inicio.plusDays(i));
+                            }
+                        } else {
+                            datasParaMostrar.add(dataReferencia);
+                        }
 
-    private void carregarEventosDaSemana(long dataMillis) {
-        eventos.clear();
+                        for (int i = 0; i < response.length(); i++) {
+                            JSONObject item = response.getJSONObject(i);
+                            String nome = item.getString("nomeEvento");
+                            LocalDate data = LocalDate.parse(item.getString("dataEvento"));
 
-        LocalDate selecionada = LocalDate.ofEpochDay(dataMillis / (24 * 60 * 60 * 1000));
-        LocalDate inicioSemana = obterInicioSemana(selecionada);
-        SharedPreferences prefs = getSharedPreferences("events", MODE_PRIVATE);
+                            if (datasParaMostrar.contains(data)) {
+                                eventosFiltrados.add(nome + " - " + data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                            }
+                        }
 
-        for (int i = 0; i < 7; i++) {
-            LocalDate dia = inicioSemana.plusDays(i);
-            String eventosSalvos = prefs.getString(dia.toString(), "");
-            if (!eventosSalvos.isEmpty()) {
-                String[] itens = eventosSalvos.split(";");
-                for (String item : itens) {
-                    eventos.add(item + " - " + dia.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                        eventos.addAll(eventosFiltrados);
+                        adaptadorEvento.notifyDataSetChanged();
+                        textoEventos.setText(porSemana ? "Eventos da semana" : "Eventos do dia " + dataReferencia.getDayOfMonth() + "/" + dataReferencia.getMonthValue());
+
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Erro ao processar eventos", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    Toast.makeText(this, "Erro ao buscar eventos: " + error.getMessage(), Toast.LENGTH_LONG).show();
                 }
-            }
-        }
+        );
 
-        adaptadorEvento.notifyDataSetChanged();
-        textoEventos.setText("Eventos da semana");
+        Volley.newRequestQueue(this).add(request);
     }
 
     private LocalDate obterInicioSemana(LocalDate data) {
@@ -164,9 +173,32 @@ public class CalendarioActivity extends AppCompatActivity {
         eventos.add(evento.toString());
         salvarEvento(evento);
         adaptadorEvento.notifyDataSetChanged();
-        agendarNotificacao(evento);
-
+        // agendarNotificacao(evento); // optional
     }
+
+    private void salvarEvento(Evento evento) {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("nomeEvento", evento.getNomeEvento());
+            json.put("dataEvento", evento.getDataEvento().toString());
+
+            String url = IpConfig.API_IP + "/calendario/registrar";
+
+            JsonObjectRequest request = new JsonObjectRequest(
+                    Request.Method.POST,
+                    url,
+                    json,
+                    response -> Toast.makeText(this, "Evento salvo com sucesso!", Toast.LENGTH_SHORT).show(),
+                    error -> Toast.makeText(this, "Erro ao salvar evento: " + error.getMessage(), Toast.LENGTH_LONG).show()
+            );
+
+            Volley.newRequestQueue(this).add(request);
+
+        } catch (Exception e) {
+            Toast.makeText(this, "Erro ao criar JSON do evento", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void agendarNotificacao(Evento evento) {
         long tempoMillis = evento.getDataEvento()
                 .atStartOfDay(ZoneId.systemDefault())
@@ -178,42 +210,12 @@ public class CalendarioActivity extends AppCompatActivity {
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 this,
-                (int) tempoMillis, // ID único
+                (int) tempoMillis,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         alarmManager.setExact(AlarmManager.RTC_WAKEUP, tempoMillis, pendingIntent);
-    }
-
-
-    private void salvarEvento(Evento evento) {
-        SharedPreferences prefs = getSharedPreferences("events", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-
-        String chaveData = evento.getDataEvento().toString();
-        String eventosExistentes = prefs.getString(chaveData, "");
-
-        String eventosAtualizados = eventosExistentes.isEmpty() ? evento.getNomeEvento() : eventosExistentes + ";" + evento.getNomeEvento();
-
-        editor.putString(chaveData, eventosAtualizados);
-        editor.apply();
-    }
-
-    private void carregarEventosSalvos() {
-        SharedPreferences prefs = getSharedPreferences("events", MODE_PRIVATE);
-        String listaEventosStr = prefs.getString("eventList", "");
-
-        String[] arrayEventos = listaEventosStr.split(",");
-
-        eventos.clear();
-        for (String evento : arrayEventos) {
-            if (!evento.isEmpty()) {
-                eventos.add(evento);
-            }
-        }
-
-        adaptadorEvento.notifyDataSetChanged();
     }
 }

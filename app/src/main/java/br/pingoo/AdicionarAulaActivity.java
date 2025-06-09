@@ -23,7 +23,7 @@ public class AdicionarAulaActivity extends AppCompatActivity {
 
     private EditText editMateria, editProfessor, editDiaSemana;
     private Button btnSalvar;
-    private static final String url = "http://192.168.1.254:8080/aulas";
+    private static final String url = IpConfig.API_IP + "/aulas";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
