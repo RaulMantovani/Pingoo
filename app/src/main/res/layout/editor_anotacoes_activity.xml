@@ -23,4 +23,11 @@
         android:hint="Digite sua anotação aqui..."
         android:gravity="top|start"
         android:inputType="textMultiLine|textCapSentences|textAutoCorrect|textImeMultiLine"/>
+
+    <Button
+        android:id="@+id/btnSalvar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Salvar" />
 </LinearLayout>

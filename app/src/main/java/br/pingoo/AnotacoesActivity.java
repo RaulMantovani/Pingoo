@@ -1,9 +1,7 @@
 package br.pingoo;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -12,20 +10,32 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import org.json.JSONArray;
-
-import java.util.ArrayList;
 import androidx.core.content.ContextCompat;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 
 public class AnotacoesActivity extends AppCompatActivity {
 
+    ArrayList<JSONObject> anotacoes = new ArrayList<>();
     static ArrayList<String> notes = new ArrayList<>();
     static ArrayAdapter<String> arrayAdapter;
 
     ListView listView;
     Button btnAdd, btnDelete;
+
+    RequestQueue requestQueue;
+    String baseUrl = "http://192.168.1.254:8080/anotacoes";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,23 +46,7 @@ public class AnotacoesActivity extends AppCompatActivity {
         btnAdd = findViewById(R.id.btnAddNote);
         btnDelete = findViewById(R.id.btnDeleteNote);
 
-        // Carrega as notas salvas no formato JSON
-        SharedPreferences sp = getApplicationContext().getSharedPreferences("br.pingoo", Context.MODE_PRIVATE);
-        String notesJson = sp.getString("notes_json", null);
-
-        if (notesJson != null) {
-            try {
-                JSONArray jsonArray = new JSONArray(notesJson);
-                notes.clear();
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    notes.add(jsonArray.getString(i));
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            notes.add("");
-        }
+        requestQueue = Volley.newRequestQueue(this);
 
         arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_activated_1, notes) {
             @Override
@@ -70,44 +64,64 @@ public class AnotacoesActivity extends AppCompatActivity {
             }
         };
 
-
         listView.setAdapter(arrayAdapter);
         listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
-        // Clique curto apenas seleciona
+        carregarAnotacoes();
+
         listView.setOnItemClickListener((parent, view, position, id) -> {
             listView.setItemChecked(position, true);
         });
 
-        // Clique longo abre para edição
         listView.setOnItemLongClickListener((parent, view, position, id) -> {
-            Intent intent = new Intent(getApplicationContext(), EditorAnotacoesActivity.class);
-            intent.putExtra("noteId", position);
-            startActivity(intent);
+            try {
+                int anotacaoId = anotacoes.get(position).getInt("id");
+                Intent intent = new Intent(getApplicationContext(), EditorAnotacoesActivity.class);
+                intent.putExtra("noteId", anotacaoId);
+                startActivity(intent);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
             return true;
         });
 
         btnAdd.setOnClickListener(v -> {
-            notes.add("");
-            arrayAdapter.notifyDataSetChanged();
-            salvarNotas();
+            JSONObject body = new JSONObject();
+            try {
+                body.put("titulo", "Nova anotação");     // CORRETO: Título visível na lista
+                body.put("conteudo", "");                // Começa com conteúdo vazio
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
 
-            Intent intent = new Intent(getApplicationContext(), EditorAnotacoesActivity.class);
-            intent.putExtra("noteId", notes.size() - 1);
-            startActivity(intent);
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, baseUrl, body,
+                    response -> carregarAnotacoes(),
+                    error -> error.printStackTrace()
+            );
+
+            requestQueue.add(request);
         });
 
         btnDelete.setOnClickListener(v -> {
             int pos = listView.getCheckedItemPosition();
             if (pos != ListView.INVALID_POSITION) {
                 new AlertDialog.Builder(this)
-                        .setTitle("Excluir nota")
-                        .setMessage("Tem certeza que deseja excluir essa nota?")
+                        .setTitle("Excluir anotação")
+                        .setMessage("Tem certeza que deseja excluir esta anotação?")
                         .setPositiveButton("Sim", (dialog, which) -> {
-                            notes.remove(pos);
-                            arrayAdapter.notifyDataSetChanged();
-                            listView.clearChoices();
-                            salvarNotas();
+                            try {
+                                int id = anotacoes.get(pos).getInt("id");
+                                String url = baseUrl + "/" + id;
+
+                                StringRequest request = new StringRequest(Request.Method.DELETE, url,
+                                        response -> carregarAnotacoes(),
+                                        error -> error.printStackTrace()
+                                );
+
+                                requestQueue.add(request);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
                         })
                         .setNegativeButton("Cancelar", null)
                         .show();
@@ -115,10 +129,31 @@ public class AnotacoesActivity extends AppCompatActivity {
         });
     }
 
-    private void salvarNotas() {
-        SharedPreferences sp = getApplicationContext().getSharedPreferences("br.pingoo", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putString("notes_json", new JSONArray(notes).toString());
-        editor.apply();
+    private void carregarAnotacoes() {
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, baseUrl, null,
+                response -> {
+                    anotacoes.clear();
+                    notes.clear();
+                    for (int i = 0; i < response.length(); i++) {
+                        try {
+                            JSONObject obj = response.getJSONObject(i);
+                            anotacoes.add(obj);
+                            notes.add(obj.getString("titulo"));  // agora mostra o título corretamente
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    arrayAdapter.notifyDataSetChanged();
+                },
+                error -> error.printStackTrace()
+        );
+
+        requestQueue.add(request);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        carregarAnotacoes(); // atualiza lista ao voltar da tela de edição
     }
 }
